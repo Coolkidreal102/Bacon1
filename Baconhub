@@ -1,67 +1,65 @@
--- // BACON HUB: GOON-STRETCH //
-local ScreenName = "BaconHub_Final"
+-- // BACON HUB: REPAIRED //
+local ScreenName = "BaconHub_Fixed"
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- Clean up old UI
 if LocalPlayer.PlayerGui:FindFirstChild(ScreenName) then LocalPlayer.PlayerGui[ScreenName]:Destroy() end
 
-local Config = {
-    Color = Color3.fromRGB(255, 0, 80), 
-    Bg = Color3.fromRGB(10, 10, 10)
-}
-
--- // UI CONSTRUCTION //
+local Config = { Color = Color3.fromRGB(255, 0, 80), Bg = Color3.fromRGB(10, 10, 10) }
 local Screen = Instance.new("ScreenGui", LocalPlayer.PlayerGui); Screen.Name = ScreenName; Screen.ResetOnSpawn = false
 
--- Draggable Open Button
-local OpenBtn = Instance.new("TextButton", Screen)
-OpenBtn.Size = UDim2.new(0, 200, 0, 45); OpenBtn.Position = UDim2.new(0.5, -100, 0, 20)
-OpenBtn.BackgroundColor3 = Config.Bg; OpenBtn.Text = "OPEN BACON HUB"; OpenBtn.TextColor3 = Config.Color
-OpenBtn.Font = Enum.Font.GothamBold; OpenBtn.TextSize = 16; Instance.new("UICorner", OpenBtn)
-Instance.new("UIStroke", OpenBtn).Color = Config.Color
-
--- Main Frame
-local Main = Instance.new("Frame", Screen)
-Main.Size = UDim2.new(0, 260, 0, 380); Main.Position = UDim2.new(0.5, -130, 0.5, -190)
-Main.BackgroundColor3 = Config.Bg; Main.Visible = true; Instance.new("UICorner", Main)
-Instance.new("UIStroke", Main).Color = Config.Color
-
--- Header
-local Head = Instance.new("Frame", Main); Head.Size = UDim2.new(1, 0, 0, 45); Head.BackgroundTransparency = 1
-local Title = Instance.new("TextLabel", Head); Title.Size = UDim2.new(1, -40, 1, 0); Title.Text = "  BACON HUB"; Title.TextColor3 = Config.Color
-Title.Font = Enum.Font.GothamBold; Title.BackgroundTransparency = 1; Title.TextXAlignment = 0; Title.Position = UDim2.new(0, 10, 0, 0); Title.TextSize = 20
-
--- Target Input
-local Input = Instance.new("TextBox", Main)
-Input.Size = UDim2.new(1, -20, 0, 35); Input.Position = UDim2.new(0, 10, 0, 60)
-Input.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Input.PlaceholderText = "Target Name"; Input.Text = ""
-Input.TextColor3 = Color3.new(1, 1, 1); Input.Font = Enum.Font.Gotham; Input.TextSize = 14; Instance.new("UICorner", Input)
-
--- Scrolling List
-local List = Instance.new("ScrollingFrame", Main)
-List.Size = UDim2.new(1, -20, 1, -110); List.Position = UDim2.new(0, 10, 0, 105)
-List.BackgroundTransparency = 1; List.ScrollBarThickness = 0
-local layout = Instance.new("UIListLayout", List); layout.Padding = UDim.new(0, 8)
-
--- // ENGINE FUNCTIONS //
-
+-- // DRAGGABLE LOGIC //
 local function makeDraggable(obj)
-    local dragging, dragStart, startPos
+    local dragging, dragInput, dragStart, startPos
     obj.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true; dragStart = input.Position; startPos = obj.Position end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = obj.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
     end)
     UIS.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
             obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
-    UIS.InputEnded:Connect(function() dragging = false end)
 end
 
+-- Open Button
+local OpenBtn = Instance.new("TextButton", Screen)
+OpenBtn.Size = UDim2.new(0, 200, 0, 45); OpenBtn.Position = UDim2.new(0.5, -100, 0, 20)
+OpenBtn.BackgroundColor3 = Config.Bg; OpenBtn.Text = "OPEN BACON HUB"; OpenBtn.TextColor3 = Config.Color
+OpenBtn.Font = Enum.Font.GothamBold; OpenBtn.TextSize = 18; Instance.new("UICorner", OpenBtn)
+makeDraggable(OpenBtn)
+
+-- Main Frame
+local Main = Instance.new("Frame", Screen)
+Main.Size = UDim2.new(0, 260, 0, 350); Main.Position = UDim2.new(0.5, -130, 0.5, -175)
+Main.BackgroundColor3 = Config.Bg; Main.Visible = true; Instance.new("UICorner", Main)
+Instance.new("UIStroke", Main).Color = Config.Color; makeDraggable(Main)
+
+-- UI Content
+local Title = Instance.new("TextLabel", Main); Title.Size = UDim2.new(1, 0, 0, 45)
+Title.Text = "BACON HUB"; Title.TextColor3 = Config.Color; Title.Font = Enum.Font.GothamBold
+Title.TextSize = 22; Title.BackgroundTransparency = 1
+
+local Input = Instance.new("TextBox", Main)
+Input.Size = UDim2.new(1, -20, 0, 35); Input.Position = UDim2.new(0, 10, 0, 50)
+Input.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Input.PlaceholderText = "Target Name"; Input.TextSize = 16
+Input.TextColor3 = Color3.new(1, 1, 1); Input.Font = Enum.Font.Gotham; Instance.new("UICorner", Input)
+
+local List = Instance.new("ScrollingFrame", Main)
+List.Size = UDim2.new(1, -20, 1, -100); List.Position = UDim2.new(0, 10, 0, 95)
+List.BackgroundTransparency = 1; List.ScrollBarThickness = 0
+local layout = Instance.new("UIListLayout", List); layout.Padding = UDim.new(0, 8)
+
+-- // FUNCTIONS //
 local function getTarget()
     local text = Input.Text:lower()
     for _, p in pairs(Players:GetPlayers()) do
@@ -70,59 +68,48 @@ local function getTarget()
     return nil
 end
 
-local function GoonStretch(targetChar, mode)
-    local char = LocalPlayer.Character
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local trp = targetChar:FindFirstChild("HumanoidRootPart")
-    if not hrp or not trp then return end
-    
-    local rightLegJoint = char:FindFirstChild("Right Hip", true)
-    local armJoint = char:FindFirstChild("Right Shoulder", true)
-    local start = tick()
-
-    task.spawn(function()
-        while tick() - start < 1.5 and targetChar do
-            local offset = math.sin(tick() * 50) * 2
-            hrp.CFrame = trp.CFrame * CFrame.new(0, 0, offset)
-            hrp.Velocity = Vector3.new(0, 100, 0) -- Force to trigger fling
-
-            if mode == "NOM" and rightLegJoint then
-                rightLegJoint.C0 = rightLegJoint.C0:Lerp(CFrame.new(1, -1, -2) * CFrame.Angles(math.rad(-90), 0, 0), 0.5)
-            elseif mode == "ATTACK" and armJoint then
-                armJoint.C0 = armJoint.C0:Lerp(CFrame.new(1, 0.5, -2) * CFrame.Angles(math.rad(90), 0, 0), 0.5)
-            end
-            RunService.Heartbeat:Wait()
-        end
-        -- Reset Joints
-        if rightLegJoint then rightLegJoint.C0 = CFrame.new(1, -1, 0) end
-        if armJoint then armJoint.C0 = CFrame.new(1, 0.5, 0) end
-    end)
-end
-
 local function addBtn(txt, callback)
-    local b = Instance.new("TextButton", List); b.Size = UDim2.new(1, 0, 0, 45)
-    b.BackgroundColor3 = Color3.fromRGB(25,25,25); b.Text = txt; b.TextColor3 = Color3.new(1,1,1)
-    b.Font = Enum.Font.GothamBold; b.TextSize = 14; Instance.new("UICorner", b)
+    local b = Instance.new("TextButton", List); b.Size = UDim2.new(1, 0, 0, 50)
+    b.BackgroundColor3 = Color3.fromRGB(30, 30, 30); b.Text = txt; b.TextColor3 = Color3.new(1, 1, 1)
+    b.Font = Enum.Font.GothamBold; b.TextSize = 16; Instance.new("UICorner", b)
     b.MouseButton1Click:Connect(callback)
     return b
 end
 
--- // BUTTONS //
-addBtn("ATTACK (FLING)", function() 
+-- // CORE ACTIONS //
+addBtn("ATTACK", function()
     local t = getTarget()
-    if t then GoonStretch(t, "ATTACK") end
+    if t and t:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2)
+    end
 end)
 
-addBtn("NOM (FLING)", function() 
+addBtn("KICK", function()
     local t = getTarget()
-    if t then GoonStretch(t, "NOM") end
+    if t and t:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0, 0, -1)
+    end
 end)
 
-addBtn("REJOIN", function()
-    game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer)
+local goonActive = false
+local goonBtn = addBtn("GOONING", function() end)
+goonBtn.MouseButton1Click:Connect(function()
+    goonActive = not goonActive
+    goonBtn.BackgroundColor3 = goonActive and Config.Color or Color3.fromRGB(30, 30, 30)
+    goonBtn.TextColor3 = goonActive and Color3.new(0,0,0) or Color3.new(1,1,1)
+    
+    task.spawn(function()
+        while goonActive do
+            local t = getTarget()
+            if t and t:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
+                local offset = math.sin(tick() * 20) * 2
+                LocalPlayer.Character.HumanoidRootPart.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0, 0, offset)
+            end
+            RunService.Heartbeat:Wait()
+        end
+    end)
 end)
 
--- Initialize UI
-makeDraggable(Main); makeDraggable(OpenBtn)
+-- Toggle Menu
 OpenBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
 UIS.InputBegan:Connect(function(i, g) if not g and i.KeyCode == Enum.KeyCode.K then Main.Visible = not Main.Visible end end)
