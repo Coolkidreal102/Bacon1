@@ -1,110 +1,92 @@
--- // BACON HUB: COMPACT & FIXED //
+-- // BACON HUB: PHYSICAL LIMB FLING //
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
-local ScreenName = "BaconMini"
+local ScreenName = "BaconPhys"
 if LocalPlayer.PlayerGui:FindFirstChild(ScreenName) then LocalPlayer.PlayerGui[ScreenName]:Destroy() end
 
 local Config = { Color = Color3.fromRGB(255, 0, 80), Bg = Color3.fromRGB(15, 15, 15) }
-
--- // UI SETUP //
 local Screen = Instance.new("ScreenGui", LocalPlayer.PlayerGui); Screen.Name = ScreenName; Screen.ResetOnSpawn = false
 
--- Compact Open Button
-local OpenBtn = Instance.new("TextButton", Screen)
-OpenBtn.Size = UDim2.new(0, 120, 0, 30); OpenBtn.Position = UDim2.new(0, 10, 0.5, 0)
-OpenBtn.BackgroundColor3 = Config.Bg; OpenBtn.Text = "BACON: OPEN"; OpenBtn.TextColor3 = Config.Color
-OpenBtn.Font = Enum.Font.GothamBold; OpenBtn.TextSize = 12; Instance.new("UICorner", OpenBtn)
-
 -- Mini Main Frame
-local Main = Instance.new("Frame", Screen)
-Main.Size = UDim2.new(0, 180, 0, 240); Main.Position = UDim2.new(0.5, -90, 0.5, -120)
-Main.BackgroundColor3 = Config.Bg; Main.BorderSizePixel = 0; Main.Visible = true; Instance.new("UICorner", Main)
-local stroke = Instance.new("UIStroke", Main); stroke.Color = Config.Color; stroke.Thickness = 1.5
+local Main = Instance.new("Frame", Screen); Main.Size = UDim2.new(0, 180, 0, 220); Main.Position = UDim2.new(0.5, -90, 0.5, -110)
+Main.BackgroundColor3 = Config.Bg; Main.Visible = true; Instance.new("UICorner", Main)
+Instance.new("UIStroke", Main).Color = Config.Color
 
--- Title
-local Title = Instance.new("TextLabel", Main); Title.Size = UDim2.new(1, 0, 0, 35)
-Title.Text = "BACON HUB"; Title.TextColor3 = Config.Color; Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16; Title.BackgroundTransparency = 1
+local Input = Instance.new("TextBox", Main); Input.Size = UDim2.new(1, -20, 0, 30); Input.Position = UDim2.new(0, 10, 0, 40)
+Input.BackgroundColor3 = Color3.fromRGB(30, 30, 30); Input.PlaceholderText = "Target..."; Input.TextColor3 = Color3.new(1, 1, 1); Instance.new("UICorner", Input)
 
--- Small Input
-local Input = Instance.new("TextBox", Main)
-Input.Size = UDim2.new(1, -20, 0, 30); Input.Position = UDim2.new(0, 10, 0, 40)
-Input.BackgroundColor3 = Color3.fromRGB(30, 30, 30); Input.PlaceholderText = "Target..."; Input.TextSize = 12
-Input.TextColor3 = Color3.new(1, 1, 1); Input.Font = Enum.Font.Gotham; Instance.new("UICorner", Input)
+local List = Instance.new("ScrollingFrame", Main); List.Size = UDim2.new(1, -10, 1, -85); List.Position = UDim2.new(0, 5, 0, 80)
+List.BackgroundTransparency = 1; List.ScrollBarThickness = 0; Instance.new("UIListLayout", List).Padding = UDim.new(0, 5)
 
-local List = Instance.new("ScrollingFrame", Main)
-List.Size = UDim2.new(1, -10, 1, -85); List.Position = UDim2.new(0, 5, 0, 80)
-List.BackgroundTransparency = 1; List.ScrollBarThickness = 0
-local layout = Instance.new("UIListLayout", List); layout.Padding = UDim.new(0, 5)
+-- // THE PHYSICAL FLING ENGINE //
+local function PhysicalAction(targetChar, type)
+    local char = LocalPlayer.Character
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local trp = targetChar:FindFirstChild("HumanoidRootPart")
+    if not hrp or not trp then return end
 
--- // DRAG SYSTEM (Improved) //
-local function makeDraggable(gui)
-	local dragging, dragInput, dragStart, startPos
-	gui.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true; dragStart = input.Position; startPos = gui.Position
-			input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
-		end
-	end)
-	UIS.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			local delta = input.Position - dragStart
-			gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-		end
-	end)
+    -- Find the specific joint to move
+    local joint = (type == "KICK") and char:FindFirstChild("Right Hip", true) or char:FindFirstChild("Right Shoulder", true)
+    local originalC0 = joint.C0
+
+    task.spawn(function()
+        local start = tick()
+        while tick() - start < 0.8 do
+            -- 1. Stick to them
+            hrp.CFrame = trp.CFrame * CFrame.new(0, 0, 1.5)
+            
+            -- 2. Massive Velocity (The Fling)
+            hrp.Velocity = Vector3.new(500000, 500000, 500000)
+            
+            -- 3. Stretch the limb physically into their hitbox
+            if joint then
+                joint.C0 = joint.C0:Lerp(CFrame.new(0, 0, -3) * CFrame.Angles(math.rad(90), 0, 0), 0.3)
+            end
+            RunService.Heartbeat:Wait()
+        end
+        -- Reset
+        if joint then joint.C0 = originalC0 end
+        hrp.Velocity = Vector3.new(0, 0, 0)
+    end)
 end
 
--- // CORE LOGIC //
-local function getTarget()
-	local text = Input.Text:lower()
-	if text == "" then return nil end
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer and p.Name:lower():find(text) then return p.Character end
-	end
-	return nil
-end
-
+-- // BUTTONS //
 local function addBtn(txt, callback)
-	local b = Instance.new("TextButton", List); b.Size = UDim2.new(1, 0, 0, 35)
-	b.BackgroundColor3 = Color3.fromRGB(40, 40, 40); b.Text = txt; b.TextColor3 = Color3.new(1, 1, 1)
-	b.Font = Enum.Font.GothamBold; b.TextSize = 12; Instance.new("UICorner", b)
-	b.MouseButton1Click:Connect(callback)
+    local b = Instance.new("TextButton", List); b.Size = UDim2.new(1, 0, 0, 35)
+    b.BackgroundColor3 = Color3.fromRGB(40, 40, 40); b.Text = txt; b.TextColor3 = Color3.new(1, 1, 1); b.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", b); b.MouseButton1Click:Connect(callback)
 end
 
--- // BUTTON ACTIONS //
-addBtn("ATTACK", function()
-	local t = getTarget()
-	if t and t:FindFirstChild("HumanoidRootPart") then
-		LocalPlayer.Character.HumanoidRootPart.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2)
-	end
-end)
+local function getT()
+    local text = Input.Text:lower()
+    for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer and p.Name:lower():find(text) then return p.Character end end
+    return nil
+end
 
-addBtn("KICK", function()
-	local t = getTarget()
-	if t and t:FindFirstChild("HumanoidRootPart") then
-		LocalPlayer.Character.HumanoidRootPart.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0, 0, -1)
-	end
-end)
+addBtn("ATTACK (FLING)", function() local t = getT() if t then PhysicalAction(t, "ATTACK") end end)
+addBtn("KICK (FLING)", function() local t = getT() if t then PhysicalAction(t, "KICK") end end)
 
 local goonActive = false
 addBtn("GOONING", function()
-	goonActive = not goonActive
-	local t = getTarget()
-	task.spawn(function()
-		while goonActive do
-			if t and t:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
-				local offset = math.sin(tick() * 25) * 1.5
-				LocalPlayer.Character.HumanoidRootPart.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0, 0, offset)
-			end
-			RunService.Heartbeat:Wait()
-		end
-	end)
+    goonActive = not goonActive
+    task.spawn(function()
+        while goonActive do
+            local t = getT()
+            if t and t:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0, 0, math.sin(tick() * 30) * 2)
+            end
+            RunService.Heartbeat:Wait()
+        end
+    end)
 end)
 
--- Finalize
-makeDraggable(Main); makeDraggable(OpenBtn)
-OpenBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
-UIS.InputBegan:Connect(function(i, g) if not g and i.KeyCode == Enum.KeyCode.K then Main.Visible = not Main.Visible end end)
+-- Dragging
+local function drag(gui)
+    local d, s, sp; gui.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d = true; s = i.Position; sp = gui.Position end end)
+    UIS.InputChanged:Connect(function(i) if d and i.UserInputType == Enum.UserInputType.MouseMovement then local delta = i.Position - s; gui.Position = UDim2.new(sp.X.Scale, sp.X.Offset + delta.X, sp.Y.Scale, sp.Y.Offset + delta.Y) end end)
+    UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d = false end end)
+end
+drag(Main)
