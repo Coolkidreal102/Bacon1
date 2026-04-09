@@ -1,92 +1,116 @@
--- // BACON HUB: PHYSICAL LIMB FLING //
+-- // BACON HUB: ULTIMATE FLING //
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
-local ScreenName = "BaconPhys"
+local ScreenName = "BaconHub_Final"
 if LocalPlayer.PlayerGui:FindFirstChild(ScreenName) then LocalPlayer.PlayerGui[ScreenName]:Destroy() end
 
 local Config = { Color = Color3.fromRGB(255, 0, 80), Bg = Color3.fromRGB(15, 15, 15) }
+
+-- // UI SETUP //
 local Screen = Instance.new("ScreenGui", LocalPlayer.PlayerGui); Screen.Name = ScreenName; Screen.ResetOnSpawn = false
 
--- Mini Main Frame
 local Main = Instance.new("Frame", Screen); Main.Size = UDim2.new(0, 180, 0, 220); Main.Position = UDim2.new(0.5, -90, 0.5, -110)
 Main.BackgroundColor3 = Config.Bg; Main.Visible = true; Instance.new("UICorner", Main)
-Instance.new("UIStroke", Main).Color = Config.Color
+local stroke = Instance.new("UIStroke", Main); stroke.Color = Config.Color; stroke.Thickness = 1.5
 
-local Input = Instance.new("TextBox", Main); Input.Size = UDim2.new(1, -20, 0, 30); Input.Position = UDim2.new(0, 10, 0, 40)
-Input.BackgroundColor3 = Color3.fromRGB(30, 30, 30); Input.PlaceholderText = "Target..."; Input.TextColor3 = Color3.new(1, 1, 1); Instance.new("UICorner", Input)
+local Title = Instance.new("TextLabel", Main); Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "BACON HUB"; Title.TextColor3 = Config.Color; Title.Font = Enum.Font.GothamBold; Title.TextSize = 16; Title.BackgroundTransparency = 1
 
-local List = Instance.new("ScrollingFrame", Main); List.Size = UDim2.new(1, -10, 1, -85); List.Position = UDim2.new(0, 5, 0, 80)
-List.BackgroundTransparency = 1; List.ScrollBarThickness = 0; Instance.new("UIListLayout", List).Padding = UDim.new(0, 5)
+local List = Instance.new("ScrollingFrame", Main); List.Size = UDim2.new(1, -10, 1, -50); List.Position = UDim2.new(0, 5, 0, 45)
+List.BackgroundTransparency = 1; List.ScrollBarThickness = 0; 
+local layout = Instance.new("UIListLayout", List); layout.Padding = UDim.new(0, 5)
 
--- // THE PHYSICAL FLING ENGINE //
-local function PhysicalAction(targetChar, type)
-    local char = LocalPlayer.Character
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local trp = targetChar:FindFirstChild("HumanoidRootPart")
-    if not hrp or not trp then return end
+-- // FLING ENGINE //
+local function GetNearest()
+    local closest, dist = nil, 100
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if d < dist then dist = d; closest = p.Character end
+        end
+    end
+    return closest
+end
 
-    -- Find the specific joint to move
-    local joint = (type == "KICK") and char:FindFirstChild("Right Hip", true) or char:FindFirstChild("Right Shoulder", true)
-    local originalC0 = joint.C0
-
+local function FlingAction(target, duration)
+    if not target or not LocalPlayer.Character then return end
+    local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local trp = target:FindFirstChild("HumanoidRootPart")
+    
     task.spawn(function()
         local start = tick()
-        while tick() - start < 0.8 do
-            -- 1. Stick to them
-            hrp.CFrame = trp.CFrame * CFrame.new(0, 0, 1.5)
-            
-            -- 2. Massive Velocity (The Fling)
-            hrp.Velocity = Vector3.new(500000, 500000, 500000)
-            
-            -- 3. Stretch the limb physically into their hitbox
-            if joint then
-                joint.C0 = joint.C0:Lerp(CFrame.new(0, 0, -3) * CFrame.Angles(math.rad(90), 0, 0), 0.3)
+        while tick() - start < duration do
+            if hrp and trp then
+                -- Gooning Movement (Vibration)
+                local offset = math.sin(tick() * 50) * 2
+                hrp.CFrame = trp.CFrame * CFrame.new(0, 0, offset)
+                -- Fling Force
+                hrp.Velocity = Vector3.new(0, 100000, 0) + (hrp.CFrame.LookVector * 5000)
             end
             RunService.Heartbeat:Wait()
         end
-        -- Reset
-        if joint then joint.C0 = originalC0 end
         hrp.Velocity = Vector3.new(0, 0, 0)
     end)
 end
 
 -- // BUTTONS //
 local function addBtn(txt, callback)
-    local b = Instance.new("TextButton", List); b.Size = UDim2.new(1, 0, 0, 35)
-    b.BackgroundColor3 = Color3.fromRGB(40, 40, 40); b.Text = txt; b.TextColor3 = Color3.new(1, 1, 1); b.Font = Enum.Font.GothamBold
-    Instance.new("UICorner", b); b.MouseButton1Click:Connect(callback)
+    local b = Instance.new("TextButton", List); b.Size = UDim2.new(1, 0, 0, 40)
+    b.BackgroundColor3 = Color3.fromRGB(35, 35, 35); b.Text = txt; b.TextColor3 = Color3.new(1, 1, 1)
+    b.Font = Enum.Font.GothamBold; b.TextSize = 13; Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(callback)
 end
 
-local function getT()
-    local text = Input.Text:lower()
-    for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer and p.Name:lower():find(text) then return p.Character end end
-    return nil
-end
+addBtn("ATTACK (INSTANT)", function()
+    local n = GetNearest()
+    if n then FlingAction(n, 0.5) end
+end)
 
-addBtn("ATTACK (FLING)", function() local t = getT() if t then PhysicalAction(t, "ATTACK") end end)
-addBtn("KICK (FLING)", function() local t = getT() if t then PhysicalAction(t, "KICK") end end)
+addBtn("KICK (3S GOON)", function()
+    local n = GetNearest()
+    if n then FlingAction(n, 3) end
+end)
 
 local goonActive = false
-addBtn("GOONING", function()
+local goonBtn = Instance.new("TextButton", List); goonBtn.Size = UDim2.new(1, 0, 0, 40)
+goonBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35); goonBtn.Text = "GOONING"; goonBtn.TextColor3 = Color3.new(1, 1, 1)
+goonBtn.Font = Enum.Font.GothamBold; goonBtn.TextSize = 13; Instance.new("UICorner", goonBtn)
+goonBtn.Parent = List
+
+goonBtn.MouseButton1Click:Connect(function()
     goonActive = not goonActive
+    goonBtn.BackgroundColor3 = goonActive and Config.Color or Color3.fromRGB(35, 35, 35)
     task.spawn(function()
         while goonActive do
-            local t = getT()
-            if t and t:FindFirstChild("HumanoidRootPart") then
-                LocalPlayer.Character.HumanoidRootPart.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0, 0, math.sin(tick() * 30) * 2)
+            local n = GetNearest()
+            if n and n:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = n.HumanoidRootPart.CFrame * CFrame.new(0, 0, math.sin(tick() * 30) * 1.5)
             end
             RunService.Heartbeat:Wait()
         end
     end)
 end)
 
--- Dragging
-local function drag(gui)
-    local d, s, sp; gui.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d = true; s = i.Position; sp = gui.Position end end)
-    UIS.InputChanged:Connect(function(i) if d and i.UserInputType == Enum.UserInputType.MouseMovement then local delta = i.Position - s; gui.Position = UDim2.new(sp.X.Scale, sp.X.Offset + delta.X, sp.Y.Scale, sp.Y.Offset + delta.Y) end end)
-    UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d = false end end)
+-- // DRAGGING //
+local function makeDraggable(gui)
+    local dragging, dragStart, startPos
+    gui.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true; dragStart = input.Position; startPos = gui.Position
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
 end
-drag(Main)
+makeDraggable(Main)
+
+-- Toggle Menu (Press K)
+UIS.InputBegan:Connect(function(i, g) if not g and i.KeyCode == Enum.KeyCode.K then Main.Visible = not Main.Visible end end)
