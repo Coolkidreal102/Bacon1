@@ -1,106 +1,31 @@
--- // BACON HUB: ULTIMATE FLING //
+-- // BACON HUB: FINAL FIX //
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
-local ScreenName = "BaconHub_Final"
+local ScreenName = "BaconFinal"
 if LocalPlayer.PlayerGui:FindFirstChild(ScreenName) then LocalPlayer.PlayerGui[ScreenName]:Destroy() end
 
 local Config = { Color = Color3.fromRGB(255, 0, 80), Bg = Color3.fromRGB(15, 15, 15) }
 
 -- // UI SETUP //
 local Screen = Instance.new("ScreenGui", LocalPlayer.PlayerGui); Screen.Name = ScreenName; Screen.ResetOnSpawn = false
-
-local Main = Instance.new("Frame", Screen); Main.Size = UDim2.new(0, 180, 0, 220); Main.Position = UDim2.new(0.5, -90, 0.5, -110)
+local Main = Instance.new("Frame", Screen); Main.Size = UDim2.new(0, 160, 0, 200); Main.Position = UDim2.new(0.5, -80, 0.5, -100)
 Main.BackgroundColor3 = Config.Bg; Main.Visible = true; Instance.new("UICorner", Main)
-local stroke = Instance.new("UIStroke", Main); stroke.Color = Config.Color; stroke.Thickness = 1.5
+local stroke = Instance.new("UIStroke", Main); stroke.Color = Config.Color; stroke.Thickness = 2
 
-local Title = Instance.new("TextLabel", Main); Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "BACON HUB"; Title.TextColor3 = Config.Color; Title.Font = Enum.Font.GothamBold; Title.TextSize = 16; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel", Main); Title.Size = UDim2.new(1, 0, 0, 35); Title.Text = "BACON HUB"
+Title.TextColor3 = Config.Color; Title.Font = Enum.Font.GothamBold; Title.TextSize = 14; Title.BackgroundTransparency = 1
 
-local List = Instance.new("ScrollingFrame", Main); List.Size = UDim2.new(1, -10, 1, -50); List.Position = UDim2.new(0, 5, 0, 45)
-List.BackgroundTransparency = 1; List.ScrollBarThickness = 0; 
-local layout = Instance.new("UIListLayout", List); layout.Padding = UDim.new(0, 5)
+local List = Instance.new("ScrollingFrame", Main); List.Size = UDim2.new(1, -10, 1, -45); List.Position = UDim2.new(0, 5, 0, 40)
+List.BackgroundTransparency = 1; List.ScrollBarThickness = 0; Instance.new("UIListLayout", List).Padding = UDim.new(0, 5)
 
--- // FLING ENGINE //
-local function GetNearest()
-    local closest, dist = nil, 100
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local d = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-            if d < dist then dist = d; closest = p.Character end
-        end
-    end
-    return closest
-end
-
-local function FlingAction(target, duration)
-    if not target or not LocalPlayer.Character then return end
-    local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    local trp = target:FindFirstChild("HumanoidRootPart")
-    
-    task.spawn(function()
-        local start = tick()
-        while tick() - start < duration do
-            if hrp and trp then
-                -- Gooning Movement (Vibration)
-                local offset = math.sin(tick() * 50) * 2
-                hrp.CFrame = trp.CFrame * CFrame.new(0, 0, offset)
-                -- Fling Force
-                hrp.Velocity = Vector3.new(0, 100000, 0) + (hrp.CFrame.LookVector * 5000)
-            end
-            RunService.Heartbeat:Wait()
-        end
-        hrp.Velocity = Vector3.new(0, 0, 0)
-    end)
-end
-
--- // BUTTONS //
-local function addBtn(txt, callback)
-    local b = Instance.new("TextButton", List); b.Size = UDim2.new(1, 0, 0, 40)
-    b.BackgroundColor3 = Color3.fromRGB(35, 35, 35); b.Text = txt; b.TextColor3 = Color3.new(1, 1, 1)
-    b.Font = Enum.Font.GothamBold; b.TextSize = 13; Instance.new("UICorner", b)
-    b.MouseButton1Click:Connect(callback)
-end
-
-addBtn("ATTACK (INSTANT)", function()
-    local n = GetNearest()
-    if n then FlingAction(n, 0.5) end
-end)
-
-addBtn("KICK (3S GOON)", function()
-    local n = GetNearest()
-    if n then FlingAction(n, 3) end
-end)
-
-local goonActive = false
-local goonBtn = Instance.new("TextButton", List); goonBtn.Size = UDim2.new(1, 0, 0, 40)
-goonBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35); goonBtn.Text = "GOONING"; goonBtn.TextColor3 = Color3.new(1, 1, 1)
-goonBtn.Font = Enum.Font.GothamBold; goonBtn.TextSize = 13; Instance.new("UICorner", goonBtn)
-goonBtn.Parent = List
-
-goonBtn.MouseButton1Click:Connect(function()
-    goonActive = not goonActive
-    goonBtn.BackgroundColor3 = goonActive and Config.Color or Color3.fromRGB(35, 35, 35)
-    task.spawn(function()
-        while goonActive do
-            local n = GetNearest()
-            if n and n:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
-                LocalPlayer.Character.HumanoidRootPart.CFrame = n.HumanoidRootPart.CFrame * CFrame.new(0, 0, math.sin(tick() * 30) * 1.5)
-            end
-            RunService.Heartbeat:Wait()
-        end
-    end)
-end)
-
--- // DRAGGING //
+-- // DRAGGING FIXED //
 local function makeDraggable(gui)
     local dragging, dragStart, startPos
     gui.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true; dragStart = input.Position; startPos = gui.Position
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true; dragStart = input.Position; startPos = gui.Position end
     end)
     UIS.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
@@ -112,5 +37,76 @@ local function makeDraggable(gui)
 end
 makeDraggable(Main)
 
--- Toggle Menu (Press K)
+-- // TARGETING //
+local function GetNearest()
+    local closest, dist = nil, 50
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if d < dist then dist = d; closest = p.Character end
+        end
+    end
+    return closest
+end
+
+-- // FLING ACTIONS WITH SAVE POINT //
+local function FlingAction(target, duration)
+    if not target or not LocalPlayer.Character then return end
+    local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local trp = target:FindFirstChild("HumanoidRootPart")
+    
+    local savePos = hrp.CFrame -- Save your spot
+    
+    task.spawn(function()
+        local start = tick()
+        while tick() - start < duration do
+            if hrp and trp then
+                hrp.CFrame = trp.CFrame * CFrame.new(0, 0, math.sin(tick() * 65) * 1.2)
+                hrp.Velocity = Vector3.new(0, 8000, 0) -- High power fling
+            end
+            RunService.Heartbeat:Wait()
+        end
+        hrp.Velocity = Vector3.new(0, 0, 0)
+        hrp.CFrame = savePos -- Snap back
+    end)
+end
+
+-- // BUTTONS //
+local function addBtn(txt, callback)
+    local b = Instance.new("TextButton", List); b.Size = UDim2.new(1, 0, 0, 35)
+    b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = txt; b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.GothamBold; b.TextSize = 12; Instance.new("UICorner", b); b.MouseButton1Click:Connect(callback)
+    return b
+end
+
+addBtn("ATTACK (0.4S)", function()
+    local n = GetNearest()
+    if n then FlingAction(n, 0.4) end
+end)
+
+addBtn("KICK (3.0S)", function()
+    local n = GetNearest()
+    if n then FlingAction(n, 3) end
+end)
+
+local goonActive = false
+local goonBtn = addBtn("GOONING (OFF)", function() end)
+goonBtn.MouseButton1Click:Connect(function()
+    goonActive = not goonActive
+    goonBtn.Text = goonActive and "GOONING (ON)" or "GOONING (OFF)"
+    goonBtn.BackgroundColor3 = goonActive and Config.Color or Color3.fromRGB(30,30,30)
+    goonBtn.TextColor3 = goonActive and Color3.new(0,0,0) or Color3.new(1,1,1)
+
+    task.spawn(function()
+        while goonActive do
+            local n = GetNearest()
+            if n and n:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = n.HumanoidRootPart.CFrame * CFrame.new(0, 0, math.sin(tick() * 30) * 2)
+            end
+            RunService.Heartbeat:Wait()
+        end
+    end)
+end)
+
+-- Toggle Menu Visibility (K)
 UIS.InputBegan:Connect(function(i, g) if not g and i.KeyCode == Enum.KeyCode.K then Main.Visible = not Main.Visible end end)
