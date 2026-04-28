@@ -1,20 +1,87 @@
-local P,R,U,L=game:GetService("Players"),game:GetService("RunService"),game:GetService("UserInputService"),game:GetService("Players").LocalPlayer
-local C,ga,gst,pu={Color=Color3.fromRGB(255,0,80),Bg=Color3.fromRGB(10,10,10),Snd="rbxassetid://110513334295662"},false,0,false
-local S=Instance.new("ScreenGui",L.PlayerGui);S.Name="B"
-local M=Instance.new("Frame",S);M.Size=UDim2.new(0,160,0,240);M.Position=UDim2.new(0.5,-80,0.5,-120);M.BackgroundColor3=C.Bg;Instance.new("UICorner",M);Instance.new("UIStroke",M).Color=C.Color
-local Lst=Instance.new("ScrollingFrame",M);Lst.Size=UDim2.new(1,-10,1,-70);Lst.Position=UDim2.new(0,5,0,30);Lst.BackgroundTransparency=1;Lst.ScrollBarThickness=0;Instance.new("UIListLayout",Lst)
-local Inp=Instance.new("TextBox",M);Inp.Size=UDim2.new(1,-10,0,25);Inp.Position=UDim2.new(0,5,1,-30);Inp.BackgroundColor3=Color3.new(0.1,0.1,0.1);Inp.PlaceholderText="Chat...";Inp.TextColor3=Color3.new(1,1,1);Inp.TextSize=10;Instance.new("UICorner",Inp)
+local P, R, U, L = game:GetService("Players"), game:GetService("RunService"), game:GetService("UserInputService"), game:GetService("Players").LocalPlayer
+local C, ga, gst, pu = {Color = Color3.fromRGB(255, 0, 80), Bg = Color3.fromRGB(15, 15, 15)}, false, 0, false
 
-local function Drg(g)local d,s,p;g.InputBegan:Connect(function(i)if i.UserInputType==Enum.UserInputType.MouseButton1 then d=true;s=i.Position;p=g.Position end end)U.InputChanged:Connect(function(i)if d and i.UserInputType==Enum.UserInputType.MouseMovement then local e=i.Position-s;g.Position=UDim2.new(p.X.Scale,p.X.Offset+e.X,p.Y.Scale,p.Y.Offset+e.Y)end end)U.InputEnded:Connect(function(i)if i.UserInputType==Enum.UserInputType.MouseButton1 then d=false end end)end;Drg(M)
-local function Bub(p,m)local h=p.Character and p.Character:FindFirstChild("Head")if not h then return end local b=Instance.new("BillboardGui",h);b.Size=UDim2.new(0,150,0,40);b.AlwaysOnTop=true;b.ExtentsOffset=Vector3.new(0,3,0)local t=Instance.new("TextLabel",b);t.Size=UDim2.new(1,0,1,0);t.BackgroundColor3=Color3.new(0,0,0);t.Text="💭 "..m;t.TextColor3=Color3.new(1,1,1);t.TextWrapped=true;Instance.new("UICorner",t);task.delay(5,function()b:Destroy()end)end
-Inp.FocusLost:Connect(function(e)if e and Inp.Text~=""then local t=Instance.new("StringValue",L.Character);t.Name="BaconChat";t.Value=Inp.Text;Bub(L,Inp.Text);Inp.Text="";task.wait(1);t:Destroy()end end)
-task.spawn(function()while task.wait(0.2)do for _,v in pairs(P:GetPlayers())do if v~=L and v.Character then local s=v.Character:FindFirstChild("BaconChat")if s then Bub(v,s.Value)end end end end end)
+local S = Instance.new("ScreenGui", L.PlayerGui); S.Name = "BaconFinal"; S.ResetOnSpawn = false
+local function Drg(g)
+    local d, s, p; g.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d = true; s = i.Position; p = g.Position end end)
+    U.InputChanged:Connect(function(i) if d and i.UserInputType == Enum.UserInputType.MouseMovement then local e = i.Position - s; g.Position = UDim2.new(p.X.Scale, p.X.Offset + e.X, p.Y.Scale, p.Y.Offset + e.Y) end end)
+    U.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d = false end end)
+end
 
-local Sd=Instance.new("Sound",game:GetService("SoundService"));Sd.SoundId=C.Snd;Sd.Volume=3;Sd.PlaybackSpeed=0.8;Sd.Looped=true
-local Spr=Instance.new("TextButton",Lst);Spr.Size=UDim2.new(1,0,0,35);Spr.Text="SPRINT 🔒";Spr.TextColor3=Color3.new(0.5,0.5,0.5);Instance.new("UICorner",Spr)
-U.InputBegan:Connect(function(i,p)if not p and i.KeyCode==Enum.KeyCode.E and pu then local h=L.Character:FindFirstChildOfClass("Humanoid")if h then h.WalkSpeed=(h.WalkSpeed==32 and 16 or 32)end end end)
+-- // MAIN HUB //
+local M = Instance.new("Frame", S); M.Size = UDim2.new(0, 150, 0, 180); M.Position = UDim2.new(0.5, -75, 0.5, -90); M.BackgroundColor3 = C.Bg; Instance.new("UICorner", M); Drg(M)
+local Lst = Instance.new("ScrollingFrame", M); Lst.Size = UDim2.new(1, -10, 1, -40); Lst.Position = UDim2.new(0, 5, 0, 35); Lst.BackgroundTransparency = 1; Lst.ScrollBarThickness = 0; Instance.new("UIListLayout", Lst).Padding = UDim.new(0, 5)
+local Tgl = Instance.new("TextButton", S); Tgl.Size = UDim2.new(0, 35, 0, 35); Tgl.Position = UDim2.new(0, 10, 0.5, -17); Tgl.Text = "B"; Tgl.BackgroundColor3 = C.Bg; Tgl.TextColor3 = C.Color; Instance.new("UICorner", Tgl); Drg(Tgl)
+Tgl.MouseButton1Click:Connect(function() M.Visible = not M.Visible end)
 
-local function Btn(t,f)local b=Instance.new("TextButton",Lst);b.Size=UDim2.new(1,0,0,35);b.Text=t;b.BackgroundColor3=Color3.fromRGB(20,20,20);b.TextColor3=Color3.new(1,1,1);Instance.new("UICorner",b);b.MouseButton1Click:Connect(f)return b end
-Btn("ATTACK",function()local t;local d=100;for _,v in pairs(P:GetPlayers())do if v~=L and v.Character then local m=(L.Character.Head.Position-v.Character.Head.Position).Magnitude;if m<d then d=m;t=v.Character end end end;if t then L.Character.HumanoidRootPart.CFrame=t.HumanoidRootPart.CFrame;L.Character.HumanoidRootPart.Velocity=Vector3.new(9999,9999,9999)end end)
-local gb=Btn("GOONING (OFF)",function()end)gb.MouseButton1Click:Connect(function()ga=not ga;gb.Text=ga and"GOONING (ON)"or"GOONING (OFF)";gb.BackgroundColor3=ga and C.Color or Color3.fromRGB(20,20,20)if ga then Sd:Play();gst=tick()else Sd:Stop()end task.spawn(function()while ga do local t;local d=100;for _,v in pairs(P:GetPlayers())do if v~=L and v.Character then local m=(L.Character.Head.Position-v.Character.Head.Position).Magnitude;if m<d then d=m;t=v.Character end end end;if t then L.Character.HumanoidRootPart.CFrame=t.HumanoidRootPart.CFrame*CFrame.new(0,0,math.sin(tick()*30)*2)end R.Heartbeat:Wait()end end)end)
-task.spawn(function()while task.wait(0.5)do if ga and not pu then local e=tick()-gst;if e>=15 then pu=true;Spr.Text="SPRINT [E] 🔓";Spr.TextColor3=Color3.new(1,1,1)else Spr.Text="🔒 "..math.floor(15-e).."s"end end end end)
+-- // CHAT SYSTEM //
+local Ci = Instance.new("TextButton", S); Ci.Size = UDim2.new(0, 40, 0, 40); Ci.Position = UDim2.new(0, 10, 0.5, 30); Ci.Text = "💬"; Ci.BackgroundColor3 = C.Bg; Instance.new("UICorner", Ci); Drg(Ci)
+local Cf = Instance.new("Frame", S); Cf.Size = UDim2.new(0, 200, 0, 120); Cf.Position = UDim2.new(0.5, -100, 0.8, 0); Cf.BackgroundColor3 = Color3.new(0,0,0); Cf.BackgroundTransparency = 0.5; Cf.Visible = false; Instance.new("UICorner", Cf)
+local Ci_Box = Instance.new("TextBox", Cf); Ci_Box.Size = UDim2.new(1, -10, 0, 25); Ci_Box.Position = UDim2.new(0, 5, 1, -30); Ci_Box.PlaceholderText = "Global Chat..."; Ci_Box.Text = ""; Instance.new("UICorner", Ci_Box)
+Ci.MouseButton1Click:Connect(function() Cf.Visible = not Cf.Visible end)
+
+local function Bub(p, m)
+    local h = p.Character and p.Character:FindFirstChild("Head")
+    if h then
+        local b = Instance.new("BillboardGui", h); b.Size = UDim2.new(0, 150, 0, 40); b.AlwaysOnTop = true; b.ExtentsOffset = Vector3.new(0, 3, 0)
+        local t = Instance.new("TextLabel", b); t.Size = UDim2.new(1, 0, 1, 0); t.BackgroundColor3 = Color3.new(0,0,0); t.Text = "💬 "..m; t.TextColor3 = Color3.new(1,1,1); t.TextWrapped = true; Instance.new("UICorner", t)
+        task.delay(4, function() b:Destroy() end)
+    end
+end
+
+Ci_Box.FocusLost:Connect(function(e)
+    if e and Ci_Box.Text ~= "" then
+        local v = Instance.new("StringValue", L.Character); v.Name = "BaconChat"; v.Value = Ci_Box.Text; Bub(L, Ci_Box.Text); Ci_Box.Text = ""; task.wait(1); v:Destroy()
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.2) do
+        for _, v in pairs(P:GetPlayers()) do
+            if v ~= L and v.Character then
+                local s = v.Character:FindFirstChild("BaconChat")
+                if s then Bub(v, s.Value) end
+            end
+        end
+    end
+end)
+
+-- // BUTTONS & SPRINT //
+local Sd = Instance.new("Sound", game:GetService("SoundService")); Sd.SoundId = "rbxassetid://110513334295662"; Sd.Volume = 3; Sd.PlaybackSpeed = 0.8; Sd.Looped = true
+local Spr = Instance.new("TextButton", Lst); Spr.Size = UDim2.new(1, 0, 0, 30); Spr.Text = "SPRINT 🔒"; Spr.TextColor3 = Color3.new(0.5, 0.5, 0.5); Instance.new("UICorner", Spr)
+
+local function AddB(t, f)
+    local b = Instance.new("TextButton", Lst); b.Size = UDim2.new(1, 0, 0, 30); b.Text = t; b.BackgroundColor3 = Config.Accent or Color3.fromRGB(30,30,30); b.TextColor3 = Color3.new(1,1,1); Instance.new("UICorner", b); b.MouseButton1Click:Connect(f)
+end
+
+AddB("ATTACK", function()
+    local t; local d = 100; for _, v in pairs(P:GetPlayers()) do if v ~= L and v.Character then local m = (L.Character.Head.Position - v.Character.Head.Position).Magnitude; if m < d then d = m; t = v.Character end end end
+    if t then L.Character.HumanoidRootPart.CFrame = t.HumanoidRootPart.CFrame; L.Character.HumanoidRootPart.Velocity = Vector3.new(9999, 9999, 9999) end
+end)
+
+local gb = Instance.new("TextButton", Lst); gb.Size = UDim2.new(1, 0, 0, 30); gb.Text = "GOONING (OFF)"; gb.TextColor3 = Color3.new(1,1,1); Instance.new("UICorner", gb)
+gb.MouseButton1Click:Connect(function()
+    ga = not ga; gb.Text = ga and "GOONING (ON)" or "GOONING (OFF)"; gb.BackgroundColor3 = ga and C.Color or Color3.fromRGB(30,30,30)
+    if ga then Sd:Play(); gst = tick() else Sd:Stop() end
+    task.spawn(function()
+        while ga do
+            local t; local d = 100; for _, v in pairs(P:GetPlayers()) do if v ~= L and v.Character then local m = (L.Character.Head.Position - v.Character.Head.Position).Magnitude; if m < d then d = m; t = v.Character end end end
+            if t then L.Character.HumanoidRootPart.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0, 0, math.sin(tick() * 30) * 2) end
+            R.Heartbeat:Wait()
+        end
+    end)
+end)
+
+-- Sprint Unlocking
+task.spawn(function()
+    while task.wait(0.5) do
+        if ga and not pu then
+            local e = tick() - gst
+            if e >= 15 then pu = true; Spr.Text = "SPRINT 🔓 [TAP]"; Spr.TextColor3 = Color3.new(1, 1, 1) else Spr.Text = "🔒 "..math.floor(15 - e).."s" end
+        end
+    end
+end)
+
+Spr.MouseButton1Click:Connect(function()
+    if pu then local h = L.Character:FindFirstChildOfClass("Humanoid") if h then h.WalkSpeed = (h.WalkSpeed == 32 and 16 or 32) end end
+end)
