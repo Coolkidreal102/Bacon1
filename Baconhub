@@ -1,4 +1,4 @@
--- // BACON HUB: RAW (PERMA-UNLOCK EDITION) //
+-- // BACON HUB: RAW (DRAGGABLE + GLOBAL CHAT) //
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
@@ -14,39 +14,30 @@ local Config = {
 }
 
 -- // UI CONSTRUCTION //
-local Screen = Instance.new("ScreenGui", LocalPlayer.PlayerGui); Screen.Name = "BaconRawFix"; Screen.ResetOnSpawn = false
+local Screen = Instance.new("ScreenGui", LocalPlayer.PlayerGui); Screen.Name = "BaconRawFinal"; Screen.ResetOnSpawn = false
 
--- Side Toggle
-local SideBox = Instance.new("TextButton", Screen)
-SideBox.Size = UDim2.new(0, 35, 0, 35); SideBox.Position = UDim2.new(0, 10, 0.5, -17)
-SideBox.BackgroundColor3 = Config.Bg; SideBox.Text = "B"; SideBox.TextColor3 = Config.Color
-SideBox.Font = Enum.Font.GothamBold; SideBox.TextSize = 18; Instance.new("UICorner", SideBox)
-Instance.new("UIStroke", SideBox).Color = Config.Color
-
--- Main Frame
-local Main = Instance.new("Frame", Screen); Main.Size = UDim2.new(0, 170, 0, 270); Main.Position = UDim2.new(0.5, -85, 0.5, -135)
+local Main = Instance.new("Frame", Screen); Main.Size = UDim2.new(0, 200, 0, 320); Main.Position = UDim2.new(0.5, -100, 0.5, -160)
 Main.BackgroundColor3 = Config.Bg; Instance.new("UICorner", Main); Instance.new("UIStroke", Main).Color = Config.Color
 
-local Title = Instance.new("TextLabel", Main); Title.Size = UDim2.new(1, 0, 0, 35); Title.Text = "BACON HUB"
-Title.TextColor3 = Config.Color; Title.Font = Enum.Font.GothamBold; Title.TextSize = 14; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel", Main); Title.Size = UDim2.new(1, 0, 0, 30); Title.Text = "BACON HUB : RAW"
+Title.TextColor3 = Config.Color; Title.Font = Enum.Font.GothamBold; Title.TextSize = 13; Title.BackgroundTransparency = 1
 
-local List = Instance.new("ScrollingFrame", Main); List.Size = UDim2.new(1, -10, 1, -45); List.Position = UDim2.new(0, 5, 0, 40)
+local List = Instance.new("ScrollingFrame", Main); List.Size = UDim2.new(1, -10, 1, -80); List.Position = UDim2.new(0, 5, 0, 35)
 List.BackgroundTransparency = 1; List.ScrollBarThickness = 0; Instance.new("UIListLayout", List).Padding = UDim.new(0, 5)
 
--- // SPRINT UI //
-local SprintLabel = Instance.new("TextLabel", List); SprintLabel.Size = UDim2.new(1, 0, 0, 15)
-SprintLabel.Text = "Goon for 15s to unlock"; SprintLabel.TextColor3 = Color3.new(0.6, 0.6, 0.6)
-SprintLabel.Font = Enum.Font.Gotham; SprintLabel.TextSize = 10; SprintLabel.BackgroundTransparency = 1
+-- // CHAT BOX //
+local ChatInput = Instance.new("TextBox", Main); ChatInput.Size = UDim2.new(1, -10, 0, 30); ChatInput.Position = UDim2.new(0, 5, 1, -35)
+ChatInput.BackgroundColor3 = Config.Accent; ChatInput.PlaceholderText = "Type to Global Chat..."; ChatInput.Text = ""
+ChatInput.TextColor3 = Color3.new(1,1,1); ChatInput.Font = Enum.Font.Gotham; ChatInput.TextSize = 12; Instance.new("UICorner", ChatInput)
 
-local SprintBtn = Instance.new("TextButton", List); SprintBtn.Size = UDim2.new(1, 0, 0, 40)
-SprintBtn.BackgroundColor3 = Config.Accent; SprintBtn.Text = "SPRINT 🔒"; SprintBtn.TextColor3 = Color3.new(0.5, 0.5, 0.5)
-SprintBtn.Font = Enum.Font.GothamBold; SprintBtn.TextSize = 12; Instance.new("UICorner", SprintBtn)
-
--- // DRAGGING LOGIC (RESTORED) //
+-- // DRAGGING LOGIC (STRICT FIX) //
 local function EnableDrag(gui)
     local dragging, dragStart, startPos
     gui.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true; dragStart = input.Position; startPos = gui.Position end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true; dragStart = input.Position; startPos = gui.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+        end
     end)
     UIS.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
@@ -54,35 +45,79 @@ local function EnableDrag(gui)
             gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
-    UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
 end
-EnableDrag(Main); EnableDrag(SideBox)
+EnableDrag(Main)
 
--- // STATE VARIABLES //
-local goonActive = false
-local goonStartTime = 0
-local permaUnlocked = false
-local MySound = Instance.new("Sound", game:GetService("SoundService"))
-MySound.SoundId = Config.SoundId; MySound.Volume = Config.Volume; MySound.PlaybackSpeed = Config.Speed; MySound.Looped = true
+-- // GLOBAL CHAT & BUBBLE LOGIC //
+local function CreateBubble(player, msg)
+    local head = player.Character and player.Character:FindFirstChild("Head")
+    if not head then return end
+    if head:FindFirstChild("BaconBubble") then head.BaconBubble:Destroy() end
 
--- // PERMA-UNLOCK POLLING //
+    local bb = Instance.new("BillboardGui", head); bb.Name = "BaconBubble"; bb.Size = UDim2.new(0, 200, 0, 50); bb.AlwaysOnTop = true; bb.Adornee = head; bb.ExtentsOffset = Vector3.new(0, 3, 0)
+    local txt = Instance.new("TextLabel", bb); txt.Size = UDim2.new(1, 0, 1, 0); txt.BackgroundColor3 = Color3.new(0,0,0); txt.BackgroundTransparency = 0.5
+    txt.Text = "💭 " .. msg; txt.TextColor3 = Color3.new(1,1,1); txt.Font = Enum.Font.GothamBold; txt.TextSize = 14; txt.TextWrapped = true; Instance.new("UICorner", txt)
+    task.delay(5, function() bb:Destroy() end)
+end
+
+-- Sending Logic
+ChatInput.FocusLost:Connect(function(enter)
+    if enter and ChatInput.Text ~= "" then
+        local msg = ChatInput.Text
+        local tag = Instance.new("StringValue", LocalPlayer.Character)
+        tag.Name = "BaconChatSignal"; tag.Value = msg
+        CreateBubble(LocalPlayer, msg)
+        ChatInput.Text = ""
+        task.delay(1, function() tag:Destroy() end)
+    end
+end)
+
+-- Receiving Logic (Listener)
 task.spawn(function()
     while task.wait(0.1) do
-        if not permaUnlocked then
-            if goonActive then
-                local elapsed = tick() - goonStartTime
-                if elapsed >= 15 then
-                    permaUnlocked = true
-                    SprintBtn.Text = "SPRINT [E] 🔓"; SprintBtn.TextColor3 = Color3.new(1, 1, 1); SprintLabel.Text = "PERMANENTLY UNLOCKED"
-                else
-                    SprintBtn.Text = "SPRINT 🔒 ("..math.floor(15 - elapsed).."s)"
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                local sig = p.Character:FindFirstChild("BaconChatSignal")
+                if sig and sig:IsA("StringValue") then
+                    CreateBubble(p, sig.Value)
                 end
             end
         end
     end
 end)
 
--- // SPRINT KEYBIND //
+-- // GOONING & PERMA-RUN LOGIC //
+local goonActive, goonStartTime, permaUnlocked = false, 0, false
+local MySound = Instance.new("Sound", game:GetService("SoundService"))
+MySound.SoundId = Config.SoundId; MySound.Volume = Config.Volume; MySound.PlaybackSpeed = Config.Speed; MySound.Looped = true
+
+local function GetNearest()
+    local t, d = nil, 100
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local m = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if m < d then d = m; t = p.Character end
+        end
+    end
+    return t
+end
+
+-- Sprint/Lock Button Setup
+local SprintBtn = Instance.new("TextButton", List); SprintBtn.Size = UDim2.new(1, 0, 0, 40); SprintBtn.BackgroundColor3 = Config.Accent; SprintBtn.Text = "SPRINT 🔒"; SprintBtn.TextColor3 = Color3.new(0.5, 0.5, 0.5); SprintBtn.Font = Enum.Font.GothamBold; SprintBtn.TextSize = 12; Instance.new("UICorner", SprintBtn)
+
+task.spawn(function()
+    while task.wait(0.1) do
+        if not permaUnlocked and goonActive then
+            local elap = tick() - goonStartTime
+            if elap >= 15 then 
+                permaUnlocked = true; SprintBtn.Text = "SPRINT [E] 🔓"; SprintBtn.TextColor3 = Color3.new(1,1,1)
+            else
+                SprintBtn.Text = "SPRINT 🔒 ("..math.floor(15-elap).."s)"
+            end
+        end
+    end
+end)
+
 UIS.InputBegan:Connect(function(i, p)
     if not p and i.KeyCode == Enum.KeyCode.E and permaUnlocked then
         local h = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
@@ -90,140 +125,16 @@ UIS.InputBegan:Connect(function(i, p)
     end
 end)
 
--- // HELPER: GET NEAREST //
-local function GetNearest()
-    local target, dist = nil, 100
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local m = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-            if m < dist then dist = m; target = p.Character end
-        end
-    end
-    return target
-end
-
--- // BUTTON FUNCTIONS //
-local function AddB(t, c)
-    local b = Instance.new("TextButton", List); b.Size = UDim2.new(1, 0, 0, 40)
-    b.BackgroundColor3 = Config.Accent; b.Text = t; b.TextColor3 = Color3.new(1,1,1)
-    b.Font = Enum.Font.GothamBold; b.TextSize = 12; Instance.new("UICorner", b); b.MouseButton1Click:Connect(c)
-end
-
-AddB("ATTACK (INSTANT)", function()
-    local n = GetNearest()
-    if n then
-        local hrp = LocalPlayer.Character.HumanoidRootPart; local old = hrp.CFrame
-        hrp.CFrame = n.HumanoidRootPart.CFrame; hrp.Velocity = Vector3.new(99999,99999,99999)
-        task.wait(0.3); hrp.Velocity = Vector3.zero; hrp.CFrame = old
-    end
-end)
-
-local goonBtn = Instance.new("TextButton", List); goonBtn.Size = UDim2.new(1, 0, 0, 40)
-goonBtn.BackgroundColor3 = Config.Accent; goonBtn.Text = "GOONING (OFF)"; goonBtn.TextColor3 = Color3.new(1,1,1)
-goonBtn.Font = Enum.Font.GothamBold; goonBtn.TextSize = 12; Instance.new("UICorner", goonBtn)
+local goonBtn = Instance.new("TextButton", List); goonBtn.Size = UDim2.new(1, 0, 0, 40); goonBtn.BackgroundColor3 = Config.Accent; goonBtn.Text = "GOONING (OFF)"; goonBtn.TextColor3 = Color3.new(1,1,1); goonBtn.Font = Enum.Font.GothamBold; goonBtn.TextSize = 12; Instance.new("UICorner", goonBtn)
 
 goonBtn.MouseButton1Click:Connect(function()
     goonActive = not goonActive
     goonBtn.Text = goonActive and "GOONING (ON)" or "GOONING (OFF)"
     goonBtn.BackgroundColor3 = goonActive and Config.Color or Config.Accent
-    if goonActive then 
-        MySound:Play() 
-        goonStartTime = tick() 
-    else 
-        MySound:Stop() 
-    end
+    if goonActive then MySound:Play(); goonStartTime = tick() else MySound:Stop() end
     task.spawn(function()
         while goonActive do
             local n = GetNearest()
-            if n then LocalPlayer.Character.HumanoidRootPart.CFrame = n.HumanoidRootPart.CFrame * CFrame.new(0,0,math.sin(tick()*30)*2) end
-            RunService.Heartbeat:Wait()
-        end
-    end)
-end)
-
-SideBox.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
-local function Drag(g)
-    local d, s, p; g.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d = true; s = i.Position; p = g.Position end end)
-    UIS.InputChanged:Connect(function(i) if d and i.UserInputType == Enum.UserInputType.MouseMovement then
-        local del = i.Position - s; g.Position = UDim2.new(p.X.Scale, p.X.Offset + del.X, p.Y.Scale, p.Y.Offset + del.Y)
-    end end)
-    UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d = false end end)
-end; Drag(Main)
-
--- // LOGIC //
-local goonActive = false
-local goonStartTime = 0
-local runUnlocked = false
-local MySound = Instance.new("Sound", game:GetService("SoundService"))
-MySound.SoundId = Config.SoundId; MySound.Volume = Config.Volume; MySound.PlaybackSpeed = Config.Speed; MySound.Looped = true
-
--- Unlock Polling
-task.spawn(function()
-    while task.wait(0.1) do
-        if goonActive then
-            local elapsed = tick() - goonStartTime
-            if elapsed >= 15 then
-                runUnlocked = true
-                SprintBtn.Text = "SPRINT [E] 🔓"; SprintBtn.TextColor3 = Color3.new(1, 1, 1); SprintLabel.Text = "UNLOCKED!"
-            else
-                SprintBtn.Text = "SPRINT 🔒 ("..math.floor(15 - elapsed).."s)"; runUnlocked = false
-            end
-        else
-            runUnlocked = false
-            SprintBtn.Text = "SPRINT 🔒"; SprintBtn.TextColor3 = Color3.new(0.5, 0.5, 0.5); SprintLabel.Text = "Goon for 15s to unlock"
-        end
-    end
-end)
-
-UIS.InputBegan:Connect(function(i, p)
-    if not p and i.KeyCode == Enum.KeyCode.E and runUnlocked then
-        local h = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if h then h.WalkSpeed = (h.WalkSpeed == 32) and 16 or 32 end
-    end
-end)
-
--- // BUTTONS //
-local function AddB(t, c)
-    local b = Instance.new("TextButton", List); b.Size = UDim2.new(1, 0, 0, 40)
-    b.BackgroundColor3 = Config.Accent; b.Text = t; b.TextColor3 = Color3.new(1,1,1)
-    b.Font = Enum.Font.GothamBold; b.TextSize = 12; Instance.new("UICorner", b); b.MouseButton1Click:Connect(c)
-end
-
-AddB("ATTACK (INSTANT)", function()
-    local n = nil; local d = 100; for _,p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local m = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-            if m < d then d = m; n = p.Character end
-        end
-    end
-    if n then
-        local hrp = LocalPlayer.Character.HumanoidRootPart; local old = hrp.CFrame
-        hrp.CFrame = n.HumanoidRootPart.CFrame; hrp.Velocity = Vector3.new(99999,99999,99999)
-        task.wait(0.3); hrp.Velocity = Vector3.zero; hrp.CFrame = old
-    end
-end)
-
-local goonBtn = Instance.new("TextButton", List); goonBtn.Size = UDim2.new(1, 0, 0, 40)
-goonBtn.BackgroundColor3 = Config.Accent; goonBtn.Text = "GOONING (OFF)"; goonBtn.TextColor3 = Color3.new(1,1,1)
-goonBtn.Font = Enum.Font.GothamBold; goonBtn.TextSize = 12; Instance.new("UICorner", goonBtn)
-
-goonBtn.MouseButton1Click:Connect(function()
-    goonActive = not goonActive
-    goonBtn.Text = goonActive and "GOONING (ON)" or "GOONING (OFF)"
-    goonBtn.BackgroundColor3 = goonActive and Config.Color or Config.Accent
-    if goonActive then MySound:Play(); goonStartTime = tick() else 
-        MySound:Stop(); goonStartTime = 0 
-        local h = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if h then h.WalkSpeed = 16 end
-    end
-    task.spawn(function()
-        while goonActive do
-            local n = nil; local d = 100; for _,p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    local m = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-                    if m < d then d = m; n = p.Character end
-                end
-            end
             if n then LocalPlayer.Character.HumanoidRootPart.CFrame = n.HumanoidRootPart.CFrame * CFrame.new(0,0,math.sin(tick()*30)*2) end
             RunService.Heartbeat:Wait()
         end
