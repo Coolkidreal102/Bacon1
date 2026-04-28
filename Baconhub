@@ -1,4 +1,4 @@
--- // BACON HUB: SYNCED & SECURE //
+-- // BACON HUB: PREMIUM RAW //
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
@@ -6,58 +6,93 @@ local LocalPlayer = Players.LocalPlayer
 
 local Config = { 
     Color = Color3.fromRGB(255, 0, 80), 
-    Bg = Color3.fromRGB(10, 10, 10), 
-    Accent = Color3.fromRGB(20, 20, 20),
-    SoundId = "rbxassetid://110513334295662",
-    PlaybackSpeed = 0.8,
-    Volume = 3
+    Bg = Color3.fromRGB(15, 15, 15), 
+    Accent = Color3.fromRGB(30, 30, 30),
+    SoundId = "rbxassetid://99215328165197",
+    Pitch = 0.8,
+    Vol = 3
 }
 
--- // UI SETUP //
-local Screen = Instance.new("ScreenGui", LocalPlayer.PlayerGui); Screen.Name = "BaconNetwork"; Screen.ResetOnSpawn = false
-local Main = Instance.new("Frame", Screen); Main.Size = UDim2.new(0, 180, 0, 230); Main.Position = UDim2.new(0.5, -90, 0.5, -115)
-Main.BackgroundColor3 = Config.Bg; Instance.new("UICorner", Main); Instance.new("UIStroke", Main).Color = Config.Color
-local List = Instance.new("ScrollingFrame", Main); List.Size = UDim2.new(1, -10, 1, -45); List.Position = UDim2.new(0, 5, 0, 40); List.BackgroundTransparency = 1; Instance.new("UIListLayout", List)
+-- // UI CONSTRUCTION //
+local Screen = Instance.new("ScreenGui", LocalPlayer.PlayerGui); Screen.Name = "BaconPremium"; Screen.ResetOnSpawn = false
 
--- // WARNING SYSTEM //
-local function ShowWarning()
-    local WarnFrame = Instance.new("Frame", Screen)
-    WarnFrame.Size = UDim2.new(0, 250, 0, 100); WarnFrame.Position = UDim2.new(0.5, -125, 0.4, -50)
-    WarnFrame.BackgroundColor3 = Color3.new(0,0,0); Instance.new("UIStroke", WarnFrame).Color = Color3.new(1,0,0)
-    
-    local txt = Instance.new("TextLabel", WarnFrame); txt.Size = UDim2.new(1, 0, 1, 0); txt.TextWrapped = true
-    txt.Text = "WARNING: GOONING SOUNDS ACTIVE. PLEASE LOWER VOLUME IF UNDERAGE."
-    txt.TextColor3 = Color3.new(1,1,1); txt.Font = Enum.Font.GothamBold; txt.TextSize = 14; txt.BackgroundTransparency = 1
-    
-    task.delay(5, function() WarnFrame:Destroy() end)
+-- Side Toggle
+local SideBox = Instance.new("TextButton", Screen)
+SideBox.Size = UDim2.new(0, 40, 0, 40); SideBox.Position = UDim2.new(0, 15, 0.5, -20)
+SideBox.BackgroundColor3 = Config.Bg; SideBox.Text = "B"; SideBox.TextColor3 = Config.Color
+SideBox.Font = Enum.Font.GothamBold; SideBox.TextSize = 20; Instance.new("UICorner", SideBox)
+local sideStroke = Instance.new("UIStroke", SideBox); sideStroke.Color = Config.Color; sideStroke.Thickness = 2
+
+-- Main Panel
+local Main = Instance.new("Frame", Screen); Main.Size = UDim2.new(0, 190, 0, 260); Main.Position = UDim2.new(0.5, -95, 0.5, -130)
+Main.BackgroundColor3 = Config.Bg; Main.BorderSizePixel = 0; Instance.new("UICorner", Main)
+local mainStroke = Instance.new("UIStroke", Main); mainStroke.Color = Config.Color; mainStroke.Thickness = 2
+
+local Title = Instance.new("TextLabel", Main); Title.Size = UDim2.new(1, 0, 0, 40); Title.Text = "BACON HUB : RAW"
+Title.TextColor3 = Config.Color; Title.Font = Enum.Font.GothamBold; Title.TextSize = 14; Title.BackgroundTransparency = 1
+
+local List = Instance.new("ScrollingFrame", Main); List.Size = UDim2.new(1, -20, 1, -50); List.Position = UDim2.new(0, 10, 0, 45)
+List.BackgroundTransparency = 1; List.ScrollBarThickness = 0; local layout = Instance.new("UIListLayout", List); layout.Padding = UDim.new(0, 8)
+
+-- // DRAGGING FIX //
+local function MakeDraggable(gui)
+    local dragging, dragStart, startPos
+    gui.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true; dragStart = input.Position; startPos = gui.Position end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+end
+MakeDraggable(Main); MakeDraggable(SideBox)
+
+-- // LOGIC FUNCTIONS //
+local function GetNearest()
+    local closest, dist = nil, 150
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if d < dist then dist = d; closest = p.Character end
+        end
+    end
+    return closest
 end
 
--- // MODEL & AUDIO SYNC //
--- This loop detects OTHER script users
+local function Fling(target, duration)
+    local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp or not target:FindFirstChild("HumanoidRootPart") then return end
+    local oldPos = hrp.CFrame
+    local start = tick()
+    local conn; conn = RunService.Heartbeat:Connect(function()
+        if tick() - start > duration then hrp.Velocity = Vector3.zero; hrp.CFrame = oldPos; conn:Disconnect() return end
+        hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(tick()*10000), 0)
+        hrp.Velocity = Vector3.new(99999, 99999, 99999)
+    end)
+end
+
+-- // NETWORK SYNC (AUDIO + MODEL) //
 task.spawn(function()
     while task.wait(0.5) do
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
-                local signal = p.Character:FindFirstChild("BaconGoonTag")
+                local isGoon = p.Character:FindFirstChild("BaconGoonTag")
                 local root = p.Character:FindFirstChild("HumanoidRootPart")
-                
-                if signal and root then
-                    -- Play Sound Locally for you
-                    if not root:FindFirstChild("SyncSound") then
-                        local s = Instance.new("Sound", root)
-                        s.Name = "SyncSound"; s.SoundId = Config.SoundId; s.Volume = Config.Volume
-                        s.PlaybackSpeed = Config.PlaybackSpeed; s.Looped = true; s:Play()
+                if isGoon and root then
+                    if not root:FindFirstChild("SyncAudio") then
+                        local s = Instance.new("Sound", root); s.Name = "SyncAudio"; s.SoundId = Config.SoundId
+                        s.Volume = Config.Vol; s.PlaybackSpeed = Config.Pitch; s.Looped = true; s:Play()
                     end
-                    -- Show White Model (Only for script users)
                     if not p.Character:FindFirstChild("BaconVisual") then
-                        local m = Instance.new("Part", p.Character)
-                        m.Name = "BaconVisual"; m.Size = Vector3.new(4, 6, 4)
-                        m.Color = Color3.new(1, 1, 1); m.Transparency = 0.5; m.CanCollide = false
-                        local weld = Instance.new("WeldConstraint", m)
-                        weld.Part0 = m; weld.Part1 = root; m.CFrame = root.CFrame
+                        local b = Instance.new("Part", p.Character); b.Name = "BaconVisual"; b.Size = Vector3.new(5,7,5)
+                        b.Color = Color3.new(1,1,1); b.Transparency = 0.6; b.CanCollide = false; b.Material = Enum.Material.ForceField
+                        local w = Instance.new("WeldConstraint", b); w.Part0 = b; w.Part1 = root; b.CFrame = root.CFrame
                     end
                 else
-                    if root and root:FindFirstChild("SyncSound") then root.SyncSound:Destroy() end
+                    if root and root:FindFirstChild("SyncAudio") then root.SyncAudio:Destroy() end
                     if p.Character:FindFirstChild("BaconVisual") then p.Character.BaconVisual:Destroy() end
                 end
             end
@@ -65,48 +100,47 @@ task.spawn(function()
     end
 end)
 
--- // LOCAL GOONING LOGIC //
+-- // BUTTONS //
+local function CreateBtn(txt, callback)
+    local b = Instance.new("TextButton", List); b.Size = UDim2.new(1, 0, 0, 35); b.BackgroundColor3 = Config.Accent
+    b.Text = txt; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.GothamBold; b.TextSize = 11
+    Instance.new("UICorner", b); b.MouseButton1Click:Connect(callback); return b
+end
+
+CreateBtn("ATTACK (INSTANT)", function() local n = GetNearest() if n then Fling(n, 0.4) end end)
+CreateBtn("KICK (3S)", function() local n = GetNearest() if n then Fling(n, 3) end end)
+
 local goonActive = false
 local MySound = Instance.new("Sound", game:GetService("SoundService"))
-MySound.SoundId = Config.SoundId; MySound.Volume = Config.Volume; MySound.PlaybackSpeed = Config.PlaybackSpeed; MySound.Looped = true
+MySound.SoundId = Config.SoundId; MySound.Volume = Config.Vol; MySound.PlaybackSpeed = Config.Pitch; MySound.Looped = true
 
-local goonBtn = Instance.new("TextButton", List); goonBtn.Size = UDim2.new(1, 0, 0, 40)
-goonBtn.BackgroundColor3 = Config.Accent; goonBtn.Text = "GOONING (OFF)"; goonBtn.TextColor3 = Color3.new(1,1,1); Instance.new("UICorner", goonBtn)
-
+local goonBtn = CreateBtn("GOONING (OFF)", function() end)
 goonBtn.MouseButton1Click:Connect(function()
     goonActive = not goonActive
     goonBtn.Text = goonActive and "GOONING (ON)" or "GOONING (OFF)"
     goonBtn.BackgroundColor3 = goonActive and Config.Color or Config.Accent
     
     if goonActive then
-        ShowWarning()
         MySound:Play()
-        -- Create the "Signal" tag
-        local tag = Instance.new("BoolValue", LocalPlayer.Character)
-        tag.Name = "BaconGoonTag"
+        Instance.new("BoolValue", LocalPlayer.Character).Name = "BaconGoonTag"
+        -- Warning
+        local w = Instance.new("TextLabel", Screen); w.Size = UDim2.new(0, 300, 0, 50); w.Position = UDim2.new(0.5, -150, 0.2, 0)
+        w.BackgroundColor3 = Color3.new(0,0,0); w.TextColor3 = Color3.new(1,0,0); w.Text = "WARNING: LOUD AUDIO - LOWER VOLUME IF UNDERAGE"
+        w.Font = Enum.Font.GothamBold; Instance.new("UIStroke", w).Color = Color3.new(1,0,0); task.delay(3, function() w:Destroy() end)
     else
         MySound:Stop()
-        if LocalPlayer.Character:FindFirstChild("BaconGoonTag") then
-            LocalPlayer.Character.BaconGoonTag:Destroy()
-        end
+        if LocalPlayer.Character:FindFirstChild("BaconGoonTag") then LocalPlayer.Character.BaconGoonTag:Destroy() end
     end
 
     task.spawn(function()
         while goonActive do
-            -- Find target
-            local target = nil
-            local dist = 100
-            for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    local d = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-                    if d < dist then dist = d; target = p.Character end
-                end
-            end
-            -- Orbit Logic
-            if target and target:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                LocalPlayer.Character.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, math.sin(tick() * 30) * 2)
+            local n = GetNearest()
+            if n and n:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = n.HumanoidRootPart.CFrame * CFrame.new(0, 0, math.sin(tick()*20)*3)
             end
             RunService.Heartbeat:Wait()
         end
     end)
 end)
+
+SideBox.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
